@@ -6,8 +6,8 @@ defaults:
       working-directory: frontend
 
 env:
-  VITE_WEBRTC_OFFER_URL=https://europe-west4-cellular-397617.cloudfunctions.net/offer
-  CONFIG_VITE_BASE=/cellular/
+  VITE_WEBRTC_OFFER_URL: https://europe-west4-cellular-397617.cloudfunctions.net/offer
+  CONFIG_VITE_BASE: /cellular/
 
 on:
   # Runs on pushes targeting the default branch
