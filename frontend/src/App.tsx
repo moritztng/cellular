@@ -1,12 +1,10 @@
 // @ts-nocheck
 
 import { useState, useEffect, useRef } from 'react'
-import Form from 'react-bootstrap/Form'
 import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
-
-//import './App.css'
+import Form from 'react-bootstrap/Form'
 
 function connect(
   connectionCallback,
@@ -14,25 +12,28 @@ function connect(
   videoCallback,
   messageCallback
 ) {
-  navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: true,
-  })
+  const iceServers = []
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) {
+    iceServers.push({
+      urls: 'stun:stun.l.google.com:19302',
+    })
+  }
   const pc = new RTCPeerConnection({
     sdpSemantics: 'unified-plan',
+    iceServers: iceServers,
   })
-  pc.addEventListener('track', function (evt) {
-    videoCallback(evt.streams[0])
+  pc.addEventListener('track', function (e) {
+    videoCallback(e.streams[0])
   })
   const dataChannel = pc.createDataChannel('datachannel')
   dataChannel.addEventListener('message', messageCallback)
   async function start() {
-    const offer = await pc.createOffer({
+    let offer = await pc.createOffer({
       offerToReceiveVideo: true,
     })
     await pc.setLocalDescription(offer)
     if (pc.iceGatheringState !== 'complete') {
-      await new Promise(function (resolve) {
+      await new Promise((resolve) => {
         function checkState() {
           if (pc.iceGatheringState === 'complete') {
             pc.removeEventListener('icegatheringstatechange', checkState)
@@ -42,6 +43,7 @@ function connect(
         pc.addEventListener('icegatheringstatechange', checkState)
       })
     }
+    offer = pc.localDescription
     const response = await fetch(import.meta.env.VITE_WEBRTC_OFFER_URL, {
       body: JSON.stringify({
         sdp: offer.sdp,
@@ -63,21 +65,20 @@ function connect(
 function rgbToHex(rgb) {
   return (
     '#' +
-    ((1 << 24) | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2])
-      .toString(16)
-      .slice(1)
+    ((1 << 24) | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]).toString(16).slice(1)
   )
 }
 
 function App() {
   const [connection, setConnection] = useState(null)
   const [dataChannel, setDataChannel] = useState(null)
+  const [numberPlayers, setNumberPlayers] = useState(1)
   const [cellStates, setCellStates] = useState([])
-  const [selectedCellState, setSelectedCellState] = useState(0)
+  const [selectedCellState, setSelectedCellState] = useState(1)
   const [draw, setDraw] = useState(false)
-  const [drawSize, setDrawSize] = useState(1)
-  const [maxDrawSize, setMaxDrawSize] = useState(100)
-  const [drawFrequency, setDrawFrequency] = useState(30)
+  const [drawSize, setDrawSize] = useState(15)
+  const [maxDrawSize, setMaxDrawSize] = useState(75)
+  const [drawFrequency, setDrawFrequency] = useState(60)
   const [universe, setUniverse] = useState(null)
   const [zoom, setZoom] = useState(1)
   const [zoomVelocity, setZoomVelocity] = useState(0.1)
@@ -95,7 +96,7 @@ function App() {
       case 'init':
         setUniverse(value['universe'])
         setCellStates(value['cellStates'])
-        setSelectedCellState(0)
+        setSelectedCellState(1)
         break
       case 'color':
         setCellStates((prevCellStates) => {
@@ -105,6 +106,9 @@ function App() {
               : cellState
           )
         })
+        break
+      case 'players':
+        setNumberPlayers(value)
         break
     }
   }
@@ -140,6 +144,10 @@ function App() {
       (videoStream) => (refVideo.current.srcObject = videoStream),
       handleMessages
     )
+    return () => {
+      if (connection) connection.close()
+      if (dataChannel) dataChannel.close()
+    }
   }, [])
 
   useEffect(() => {
@@ -216,10 +224,10 @@ function App() {
         autoPlay
         muted
         style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           width: 'min(100vw, 100vh)',
           height: 'min(100vw, 100vh)',
         }}
@@ -244,7 +252,7 @@ function App() {
           <Container>
             <Row className="mb-4">
               {cellStates.map((cellState) => (
-                <Col style={{textAlign: "center"}}>
+                <Col style={{ textAlign: 'center' }}>
                   <span
                     style={{
                       backgroundColor: `rgb(${cellState.color.join(',')})`,
@@ -301,10 +309,17 @@ function App() {
                     )
                   }}
                 >
-                  <option value={"falling_sand"}>Falling Sand</option>
-                  <option value={"growth"}>Growth</option>
-                  <option value={"game_of_life"}>Game of Life</option>
+                  <option value={'game_of_life'}>Game of Life</option>
+                  <option value={'falling_sand'}>Falling Sand</option>
+                  <option value={'growth'}>Growth</option>
                 </Form.Select>
+              </Col>
+            </Row>
+            <Row>
+              <Col>
+                <p className="text-white">Move Keys: <b>w</b>, <b>a</b>, <b>s</b>, <b>d</b></p>
+                <p className="text-white">Zoom Keys: <b>q</b>, <b>e</b></p>
+                <p className="text-white">Players Online: <b>{numberPlayers}</b></p>
               </Col>
             </Row>
           </Container>
