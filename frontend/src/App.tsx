@@ -13,11 +13,11 @@ function connect(
   messageCallback
 ) {
   const iceServers = []
-  if (!['localhost', '127.0.0.1'].includes(location.hostname)) {
-    iceServers.push({
-      urls: 'stun:stun.l.google.com:19302',
-    })
-  }
+  // if (!['localhost', '127.0.0.1'].includes(location.hostname)) {
+  //   iceServers.push({
+  //     urls: 'stun:stun.l.google.com:19302',
+  //   })
+  // }
   const pc = new RTCPeerConnection({
     sdpSemantics: 'unified-plan',
     iceServers: iceServers,
