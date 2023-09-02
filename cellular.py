@@ -169,19 +169,19 @@ async def on_shutdown(app):
     app["state"]["executer"].shutdown()
 
 if __name__ == "__main__":
-    parser = ArgumentParser(prog='Cellular', 
-                            description='Cellular Automata in PyTorch with Multiplayer Mode in Browser via WebRTC', 
+    parser = ArgumentParser(prog="Cellular", 
+                            description="Cellular Automata in PyTorch with Multiplayer Mode in Browser via WebRTC", 
                             formatter_class=ArgumentDefaultsHelpFormatter)
     
-    parser.add_argument('--port', default=8080, type=int, help='set port')
-    parser.add_argument('--public', action='store_true', help='get a public url')
-    parser.add_argument('--ngrok_token', help='set ngrok authtoken to use your personal ngrok account. https://dashboard.ngrok.com/get-started/your-authtoken')
-    parser.add_argument('--device', choices=["cpu", "cuda", "auto"], default='auto', help='set cpu, cuda or auto.')
-    parser.add_argument('--universe_frequency', default=30, type=int, help='number of universe steps per second')
-    parser.add_argument('--universe_size', default=500, type=int, help='length of sides of the quadratic universe in pixels')
-    parser.add_argument('--video_size', default=500, type=int, help='length of sides of the quadratic video stream in pixels')
-    parser.add_argument('--video_bitrate', default=5000000, type=int, help='bitrate of the video stream')
-    parser.add_argument('--logging_debug', action='store_true', help='set logging level to debug')
+    parser.add_argument("--port", default=8080, type=int, help="set port")
+    parser.add_argument("--public", action="store_true", help="get a public url")
+    parser.add_argument("--ngrok_token", help="set ngrok authtoken to use your personal ngrok account. https://dashboard.ngrok.com/get-started/your-authtoken")
+    parser.add_argument("--device", choices=["cpu", "cuda", "auto"], default="auto", help="set cpu, cuda or auto.")
+    parser.add_argument("--universe_frequency", default=30, type=int, help="number of universe steps per second")
+    parser.add_argument("--universe_size", default=500, type=int, help="length of sides of the quadratic universe in pixels")
+    parser.add_argument("--video_size", default=500, type=int, help="length of sides of the quadratic video stream in pixels")
+    parser.add_argument("--video_bitrate", default=5000000, type=int, help="bitrate of the video stream")
+    parser.add_argument("--logging_debug", action="store_true", help="set logging level to debug")
     args = parser.parse_args()
     
     url = f"http://127.0.0.1:{args.port}"
