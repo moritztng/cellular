@@ -25,12 +25,15 @@ function connect(
   pc.addEventListener('track', function (e) {
     videoCallback(e.streams[0])
   })
+
   const dataChannel = pc.createDataChannel('datachannel')
   dataChannel.addEventListener('message', messageCallback)
+
   async function start() {
     let offer = await pc.createOffer({
       offerToReceiveVideo: true,
     })
+
     await pc.setLocalDescription(offer)
     if (pc.iceGatheringState !== 'complete') {
       await new Promise((resolve) => {
@@ -44,6 +47,7 @@ function connect(
       })
     }
     offer = pc.localDescription
+
     const response = await fetch(import.meta.env.VITE_WEBRTC_OFFER_URL, {
       body: JSON.stringify({
         sdp: offer.sdp,
@@ -56,6 +60,7 @@ function connect(
     })
     const answer = await response.json()
     await pc.setRemoteDescription(answer)
+
     connectionCallback(pc)
     dataChannelCallback(dataChannel)
   }
@@ -70,6 +75,12 @@ function rgbToHex(rgb) {
 }
 
 function App() {
+  const maxDrawSize = 75,
+    drawFrequency = 60,
+    zoomVelocity = 0.1,
+    minZoom = 0.05,
+    moveVelocity = 0.1
+
   const [connection, setConnection] = useState(null)
   const [dataChannel, setDataChannel] = useState(null)
   const [numberPlayers, setNumberPlayers] = useState(1)
@@ -77,14 +88,9 @@ function App() {
   const [selectedCellState, setSelectedCellState] = useState(1)
   const [draw, setDraw] = useState(false)
   const [drawSize, setDrawSize] = useState(15)
-  const [maxDrawSize, setMaxDrawSize] = useState(75)
-  const [drawFrequency, setDrawFrequency] = useState(60)
   const [universe, setUniverse] = useState(null)
   const [zoom, setZoom] = useState(1)
-  const [zoomVelocity, setZoomVelocity] = useState(0.1)
-  const [minZoom, setMinZoom] = useState(0.05)
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [moveVelocity, setMoveVelocity] = useState(0.1)
   const connectionState = useRef(0)
   const mousePosition = useRef({ x: 0, y: 0 })
   const refVideo = useRef<HTMLVideoElement>(null)
@@ -134,6 +140,7 @@ function App() {
 
   useEffect(() => {
     if (connectionState.current !== 0) return
+
     connectionState.current = 1
     connect(
       (connection) => {
@@ -141,9 +148,10 @@ function App() {
         connectionState.current = 2
       },
       setDataChannel,
-      (videoStream) => (refVideo.current.srcObject = videoStream),
+      videoStream => (refVideo.current.srcObject = videoStream),
       handleMessages
     )
+
     return () => {
       if (connection) connection.close()
       if (dataChannel) dataChannel.close()
@@ -170,8 +178,9 @@ function App() {
 
   useEffect(() => {
     function handleKeyDown(e) {
-      let value = { zoom: zoom, position: position }
+      const value = { zoom: zoom, position: position }
       const positionDelta = moveVelocity * zoom
+
       switch (e.keyCode) {
         case 81:
           value.zoom += zoomVelocity
@@ -192,9 +201,11 @@ function App() {
           value.position.x -= positionDelta
           break
       }
+
       value.zoom = Math.min(Math.max(value.zoom, minZoom), 1)
       value.position.x = Math.min(Math.max(value.position.x, 0), 1 - value.zoom)
       value.position.y = Math.min(Math.max(value.position.y, 0), 1 - value.zoom)
+      
       dataChannel.send(
         JSON.stringify({
           type: 'video',
@@ -317,9 +328,15 @@ function App() {
             </Row>
             <Row>
               <Col>
-                <p className="text-white">Move Keys: <b>w</b>, <b>a</b>, <b>s</b>, <b>d</b></p>
-                <p className="text-white">Zoom Keys: <b>q</b>, <b>e</b></p>
-                <p className="text-white">Players Online: <b>{numberPlayers}</b></p>
+                <p className="text-white">
+                  Move Keys: <b>w</b>, <b>a</b>, <b>s</b>, <b>d</b>
+                </p>
+                <p className="text-white">
+                  Zoom Keys: <b>q</b>, <b>e</b>
+                </p>
+                <p className="text-white">
+                  Players Online: <b>{numberPlayers}</b>
+                </p>
               </Col>
             </Row>
           </Container>
