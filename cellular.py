@@ -1,5 +1,5 @@
 import logging, json, uuid, time, asyncio, threading, aiohttp_cors, torch
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pyngrok import ngrok
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCIceServer, RTCConfiguration, RTCSessionDescription, VideoStreamTrack
@@ -31,7 +31,9 @@ class VideoTransformTrack(VideoStreamTrack):
 
     async def recv(self):
         video_state_size = int(self.universe[0].state.size(2) * self.zoom)
-        frame = self.universe[0].state[:, :, self.position[0]:self.position[0] + video_state_size, self.position[1]:self.position[1] + video_state_size]
+        frame = self.universe[0].state[:, :, 
+                                       self.position[0]:self.position[0] + video_state_size, 
+                                       self.position[1]:self.position[1] + video_state_size]
         frame = frame.reshape((frame.size(1), -1)).T[...,None]
         frame = self.universe[0].colors.T @ frame
         frame = frame.permute(1, 2, 0)
@@ -77,11 +79,7 @@ async def offer(request):
         for current_agent in agents.values():
             if current_agent["data_channel"]:
                 try:
-                    current_agent["data_channel"].send(
-                        json.dumps({
-                            "type": "players",
-                            "value": len(agents)
-                        }))
+                    current_agent["data_channel"].send(json.dumps({"type": "players", "value": len(agents)}))
                 except:
                     pass
 
@@ -104,13 +102,7 @@ async def offer(request):
             cellStates = []
             for value, color in enumerate(universe[0].colors[:,[2,1,0]].to(dtype=torch.uint8, device="cpu").tolist()):
                 cellStates.append({"value": value, "color": color})
-            channel.send(json.dumps({
-                "type": "init",
-                "value": {
-                    "universe": universe[0].name,
-                    "cellStates": cellStates
-                }
-            }))
+            channel.send(json.dumps({"type": "init", "value": {"universe": universe[0].name, "cellStates": cellStates}}))
         send_initial_state(channel)
         send_number_players()
         
@@ -126,25 +118,24 @@ async def offer(request):
                         send_initial_state(current_agent["data_channel"])
                     except:
                         pass
+
             elif message["type"] == "draw":
                 scale = agent["zoom"] * app["state"]["universe_size"]
                 y = int(value["y"] * scale + agent["position"][0])
                 x = int(value["x"] * scale + agent["position"][1])
                 app["state"]["input_queue"].put([y, x, value["size"], value["cellState"]])
+
             elif message["type"] == "color":
                 colors = universe[0].colors 
-                colors[value["cellState"], :] = torch.tensor(value["color"], dtype=torch.float32, device=colors.device)[[2,1,0]]
+                colors[value["cellState"], :] = torch.tensor(value["color"], dtype=torch.float32, 
+                                                             device=colors.device)[[2,1,0]]
                 for current_agent in agents.values():
                     try:
-                        current_agent["data_channel"].send(json.dumps({
-                            "type": "color",
-                            "value": {
-                                "cellState": value["cellState"],
-                                "color": value["color"]
-                            }
-                        }))
+                        current_agent["data_channel"].send(
+                            json.dumps({"type": "color","value": {"cellState": value["cellState"], "color": value["color"]}}))
                     except:
                         pass
+
             elif message["type"] == "video":
                 universe_size = app["state"]["universe_size"]
                 agent["position"] = [int(value["position"]["y"] * universe_size), int(value["position"]["x"] * universe_size)]
@@ -159,17 +150,15 @@ async def offer(request):
     connection.addTrack(agent["video_track"])
     answer = await connection.createAnswer()
     await connection.setLocalDescription(answer)
-    return web.Response(
-        content_type="application/json",
-        text=json.dumps(
-            {"sdp": connection.localDescription.sdp, "type": connection.localDescription.type}
-        ),
-    )
+    return web.Response(content_type="application/json", 
+                        text=json.dumps({"sdp": connection.localDescription.sdp, "type": connection.localDescription.type}))
 
 async def on_startup(app):
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(app["state"]["executer"], run_universe, app["state"]["stop_event"], app["state"]["universe"], app["state"]["universe_frequency"], app["state"]["device"], app["state"]["input_queue"])
-    print(f"success! open \033[96m{app['state']['url']}/index.html\033[0m and explore the cellular automata!")
+    loop.run_in_executor(app["state"]["executer"], run_universe, app["state"]["stop_event"], 
+                         app["state"]["universe"], app["state"]["universe_frequency"], 
+                         app["state"]["device"], app["state"]["input_queue"])
+    print(f"success! open \033[96m{app['state']['url']}/index.html\033[0m")
 
 async def on_shutdown(app):
     agents = app["state"]["agents"]
@@ -180,12 +169,13 @@ async def on_shutdown(app):
     app["state"]["executer"].shutdown()
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
-                    prog='Cellular',
-                    description='Cellular Automata in PyTorch streamed to the Browser via WebRTC')
-    parser.add_argument('--port', default=8080, type=int)
+    parser = ArgumentParser(prog='Cellular', 
+                            description='Cellular Automata in PyTorch with Multiplayer Mode in Browser via WebRTC', 
+                            formatter_class=ArgumentDefaultsHelpFormatter)
+    
+    parser.add_argument('--port', default=8080, type=int, help='set port')
     parser.add_argument('--public', action='store_true', help='get a public url')
-    parser.add_argument('--ngrok_token', help='set ngrok authtoken to use personal ngrok account. https://dashboard.ngrok.com/get-started/your-authtoken')
+    parser.add_argument('--ngrok_token', help='set ngrok authtoken to use your personal ngrok account. https://dashboard.ngrok.com/get-started/your-authtoken')
     parser.add_argument('--device', choices=["cpu", "cuda", "auto"], default='auto', help='set cpu, cuda or auto.')
     parser.add_argument('--universe_frequency', default=30, type=int, help='number of universe steps per second')
     parser.add_argument('--universe_size', default=500, type=int, help='length of sides of the quadratic universe in pixels')
@@ -202,13 +192,10 @@ if __name__ == "__main__":
         url = tunnel.public_url
     
     app = web.Application()
-    cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-            allow_credentials=True,
-            expose_headers="*",
-            allow_headers="*",
-        )
-    })
+    cors = aiohttp_cors.setup(app, defaults={"*": aiohttp_cors.ResourceOptions(
+        allow_credentials=True, 
+        expose_headers="*", 
+        allow_headers="*")})
     
     vpx.DEFAULT_BITRATE = vpx.MIN_BITRATE = vpx.MAX_BITRATE = args.video_bitrate
     device = args.device if args.device != "auto"  else "cuda" if torch.cuda.is_available() else "cpu"
@@ -217,9 +204,12 @@ if __name__ == "__main__":
     universes = {"game_of_life": {"rule": GameOfLife, "state_colors": [[0, 0, 0], [0, 255, 0]]},
                  "falling_sand": {"rule": FallingSand, "state_colors": [[0, 75, 173], [255, 218, 148], [255, 218, 148]]},
                  "growth": {"rule": Growth, "state_colors": [[0, 0, 0], [255, 0, 255], [0, 255, 255]]}}
-                
+    
     for name, params in universes.items():
-        universes[name] = lambda name=name, params=params: Universe(name, torch.zeros((1, len(params["state_colors"]), universe_size, universe_size), dtype=torch.float32, device=device), params["rule"](device), torch.tensor(params["state_colors"], dtype=torch.float32, device=device)[:, [2, 1, 0]]) 
+        universes[name] = (lambda name=name, params=params: 
+                                Universe(name, torch.zeros((1, len(params["state_colors"]), universe_size, universe_size), 
+                                         dtype=torch.float32, device=device), params["rule"](device), 
+                                         torch.tensor(params["state_colors"], dtype=torch.float32, device=device)[:, [2, 1, 0]]))
 
     app_state = {
         "agents": {},
@@ -249,6 +239,4 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
         app_print = print
 
-    web.run_app(
-        app, port=args.port, print=app_print
-    )
+    web.run_app(app, port=args.port, print=app_print)
