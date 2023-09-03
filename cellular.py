@@ -170,7 +170,7 @@ async def on_shutdown(app):
 
 if __name__ == "__main__":
     parser = ArgumentParser(prog="Cellular", 
-                            description="Cellular Automata in PyTorch with Multiplayer Mode in Browser via WebRTC", 
+                            description="Cellular Automata in PyTorch with Multiplayer Mode in the Browser via WebRTC", 
                             formatter_class=ArgumentDefaultsHelpFormatter)
     
     parser.add_argument("--port", default=8080, type=int, help="set port")
