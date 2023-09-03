@@ -61,7 +61,7 @@ def run_universe(stop_event, universe, universe_frequency, device, input_queue):
         time.sleep(1 / universe_frequency)
 
 async def offer(request):
-    connection_config = RTCConfiguration([RTCIceServer("stun:stun.l.google.com:19302")]) if app["state"]["public"] else None
+    connection_config = RTCConfiguration([RTCIceServer("stun:stun.l.google.com:19302"), RTCIceServer("stun:global.stun.twilio.com:3478")]) if app["state"]["public"] else None
     connection = RTCPeerConnection(connection_config)
     connection_id = uuid.uuid4()
     
