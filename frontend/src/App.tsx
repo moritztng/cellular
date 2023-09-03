@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
+import Spinner from 'react-bootstrap/Spinner'
 
 function connect(
   connectionCallback,
@@ -12,11 +13,16 @@ function connect(
   videoCallback,
   messageCallback
 ) {
-  const iceServers = []
+  let iceServers = []
   if (!['localhost', '127.0.0.1'].includes(location.hostname)) {
-    iceServers.push({
-      urls: 'stun:global.stun.twilio.com:3478',
-    })
+    iceServers = [
+      {
+        urls: 'stun:stun.l.google.com:19302',
+      },
+      {
+        urls: 'stun:global.stun.twilio.com:3478',
+      },
+    ]
   }
   const pc = new RTCPeerConnection({
     sdpSemantics: 'unified-plan',
@@ -148,7 +154,7 @@ function App() {
         connectionState.current = 2
       },
       setDataChannel,
-      videoStream => (refVideo.current.srcObject = videoStream),
+      (videoStream) => (refVideo.current.srcObject = videoStream),
       handleMessages
     )
 
@@ -205,7 +211,7 @@ function App() {
       value.zoom = Math.min(Math.max(value.zoom, minZoom), 1)
       value.position.x = Math.min(Math.max(value.position.x, 0), 1 - value.zoom)
       value.position.y = Math.min(Math.max(value.position.y, 0), 1 - value.zoom)
-      
+
       dataChannel.send(
         JSON.stringify({
           type: 'video',
@@ -259,7 +265,16 @@ function App() {
           backgroundColor: 'rgb(15, 15, 15)',
         }}
       >
-        {cellStates.length > 0 && (
+        {cellStates.length == 0 ? (
+          <div style={{ textAlign: 'center' }}>
+            <Spinner animation="border" variant="light" role="status" />
+            <p className="text-white">
+              Connecting...
+              <br />
+              This can take a minute
+            </p>
+          </div>
+        ) : (
           <Container>
             <Row className="mb-4">
               {cellStates.map((cellState) => (
