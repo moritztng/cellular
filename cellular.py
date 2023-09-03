@@ -174,8 +174,7 @@ if __name__ == "__main__":
                             formatter_class=ArgumentDefaultsHelpFormatter)
     
     parser.add_argument("--port", default=8080, type=int, help="set port")
-    parser.add_argument("--public", action="store_true", help="get a public url")
-    parser.add_argument("--ngrok_token", help="set ngrok authtoken to use your personal ngrok account. https://dashboard.ngrok.com/get-started/your-authtoken")
+    parser.add_argument("--public", type=str, metavar="NGROK_AUTHTOKEN", help="set authtoken from your personal ngrok account to get a public url. https://dashboard.ngrok.com/get-started/your-authtoken")
     parser.add_argument("--device", choices=["cpu", "cuda", "auto"], default="auto", help="set cpu, cuda or auto.")
     parser.add_argument("--universe_frequency", default=30, type=int, help="number of universe steps per second")
     parser.add_argument("--universe_size", default=500, type=int, help="length of sides of the quadratic universe in pixels")
@@ -186,8 +185,7 @@ if __name__ == "__main__":
     
     url = f"http://127.0.0.1:{args.port}"
     if args.public:
-        if args.ngrok_token:
-            ngrok.set_auth_token(args.ngrok_token)
+        ngrok.set_auth_token(args.public)
         tunnel = ngrok.connect(args.port, bind_tls=True)
         url = tunnel.public_url
     
@@ -223,7 +221,7 @@ if __name__ == "__main__":
         "input_queue": Queue(),
         "stop_event": threading.Event(),
         "logger": logging.getLogger(),
-        "public": args.public,
+        "public": args.public != None,
         "url": url
     }
 
