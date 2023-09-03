@@ -43,4 +43,4 @@ The token is optional and only to use your personal ngrok account.
 ```
 
 ## About the Project
-The rules of the cellular automata are expressed as PyTorch functions in `rules.py` and they use 2D convolutions. Therefore, they can be heavily parallized and leverage the GPU. The current state of the automaton is streamed to the React App in the Browser via WebRTC so that the player can interact with it. Multiple players can manipulate the same automaton and everything is synchronized. Feel free to contact me for any questions or feedback and I'm open for collaboration!
+The rules of the cellular automata are expressed as PyTorch functions in `rules.py` and they use 2D convolutions. Therefore, they can be heavily parallized and leverage the GPU. The current state of the automaton is streamed to the React App in the Browser via WebRTC so that the player can interact with it. Multiple players can manipulate the same automaton and everything is synchronized. Feel free to contact me for any questions or feedback and I'm open to collaboration!
