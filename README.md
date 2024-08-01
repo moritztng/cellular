@@ -1,8 +1,6 @@
 https://github.com/moritztng/cellular/assets/19519902/1691bc6e-8c36-4df9-abc0-2f034b71038f
 
 - [Full Video on YouTube](https://youtu.be/AwLMmECtJqI)
-- [Online Demo](https://moritztng.github.io/cellular/)
-
 ## Installation
 ```bash
 git clone https://github.com/moritztng/cellular.git
